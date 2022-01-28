@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from "dotenv";
+import joi from 'joi';
 import { MongoClient } from 'mongodb';
 
 const server = express();
@@ -19,13 +20,23 @@ mongoClient.connect().then(() => {
 server.post('/participants', (req, res) => {
   db.collection("participants").insertOne(req.body).then(() => {
     res.sendStatus(201);
-  });
+  }).catch(error => {
+    if(!req.body){
+      console.log(error);
+      res.sendStatus(422);
+    }
+  })
 });
 
 server.get('/participants', (req, res) => {
   db.collection("participants").find().toArray().then(participant => {
     res.send(participant);
-  });
+  }).catch(error => {
+    if(!req.body){
+      console.log(error);
+      res.sendStatus(422);
+    }
+  })
 });
 
 server.listen(5000);
