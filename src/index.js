@@ -9,6 +9,16 @@ server.use(express.json());
 server.use(cors());
 dotenv.config();
 
+const participantSchema = joi.object({
+  name: joi.string().required(),
+  price: joi.number().required()
+})
+
+const customerSchema = joi.object({
+  name: joi.string().required(),
+  email: joi.string().required()
+})
+
 const mongoClient = new MongoClient(process.env.MONGO_URI);
 let db;
 
@@ -17,26 +27,34 @@ mongoClient.connect().then(() => {
 });
 
 
-server.post('/participants', (req, res) => {
-  db.collection("participants").insertOne(req.body).then(() => {
+server.post('/participants', async (req, res) => {
+  const participant = req.body;
+  const validation = participantSchema.validate(participant, { abortEarly: false });
+
+  if(validation.error) {
+    res.status(422);
+    return
+  }
+  
+  try {
+    await db.collection("participants").insertOne(req.body);
+
     res.sendStatus(201);
-  }).catch(error => {
-    if(!req.body){
-      console.log(error);
-      res.sendStatus(422);
-    }
-  })
+  } catch(error) {
+    console.log(error);
+    res.sendStatus(500);
+  }  
 });
 
-server.get('/participants', (req, res) => {
-  db.collection("participants").find().toArray().then(participant => {
+server.get('/participants', async (req, res) => {
+  try {
+    const participant = await db.collection("participants").find().toArray();
+
     res.send(participant);
-  }).catch(error => {
-    if(!req.body){
+  } catch (error) {
       console.log(error);
-      res.sendStatus(422);
-    }
-  })
+      res.sendStatus(500); 
+  }
 });
 
 server.listen(5000);
