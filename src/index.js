@@ -10,14 +10,13 @@ server.use(cors());
 dotenv.config();
 
 const participantSchema = joi.object({
-  name: joi.string().required(),
-  price: joi.number().required()
+  name: joi.string().required()
 })
 
-const customerSchema = joi.object({
-  name: joi.string().required(),
-  email: joi.string().required()
-})
+// const customerSchema = joi.object({
+//   name: joi.string().required(),
+//   email: joi.string().required()
+// })
 
 const mongoClient = new MongoClient(process.env.MONGO_URI);
 let db;
@@ -26,16 +25,20 @@ mongoClient.connect().then(() => {
   db = mongoClient.db("projeto12-API-bate-papo-UOL");
 });
 
-
 server.post('/participants', async (req, res) => {
-  const participant = req.body;
-  const validation = participantSchema.validate(participant, { abortEarly: false });
+  const validation = participantSchema.validate(req.body, { abortEalry: true });
 
   if(validation.error) {
-    res.status(422);
+    res.sendStatus(422);
     return
   }
   
+  const participanteExistente = db.collection("participants").find(p => p.name === req.body.name);
+  if(participanteExistente) {
+    res.status(409).send('Nome já cadastrado');
+    return
+  }
+
   try {
     await db.collection("participants").insertOne(req.body);
 
