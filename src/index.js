@@ -96,7 +96,7 @@ server.post('/messages', async (req, res) => {
   try {
     await db.collection("messages").insertOne(message);
 
-    res.send(message);  
+    res.sendStatus(201);  
   } catch (error) {
     console.log(error);
     res.sendStatus(500);
