@@ -33,15 +33,20 @@ server.post('/participants', async (req, res) => {
     return
   }
   
-  const participanteExistente = db.collection("participants").find(p => p.name === req.body.name);
-  if(participanteExistente) {
+  const existingParticipant = await db.collection("participants").find(req.body).toArray();
+  if(existingParticipant.length !== 0) {
     res.status(409).send('Nome já cadastrado');
     return
   }
 
-  try {
-    await db.collection("participants").insertOne(req.body);
+  const participant = {
+    name: req.body.name,
+    lastStatus: Date.now()
+  }
 
+  try {
+    await db.collection("participants").insertOne(participant);
+    
     res.sendStatus(201);
   } catch(error) {
     console.log(error);
