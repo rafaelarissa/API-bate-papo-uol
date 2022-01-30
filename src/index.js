@@ -55,8 +55,6 @@ server.post('/participants', async (req, res) => {
     time: dayjs().format('HH:MM:ss')
   }
 
-  console.log(message)
-
   try {
     await db.collection("participants").insertOne(participant);
     await db.collection("messages").insertOne(message);
@@ -76,6 +74,24 @@ server.get('/participants', async (req, res) => {
   } catch (error) {
       console.log(error);
       res.sendStatus(500); 
+  }
+});
+
+server.post('/messages', async (req, res) => {
+  
+  const message = {
+    from: req.headers.user,
+    ...req.body,
+    time: dayjs().format('HH:mm:ss')
+  }
+
+  try {
+    await db.collection("messages").insertOne(message);
+
+    res.send(message);  
+  } catch (error) {
+    console.log(error);
+    res.sendStatus(500);
   }
 });
 
