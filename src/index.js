@@ -15,10 +15,11 @@ const participantSchema = joi.object({
   name: joi.string().required()
 })
 
-// const customerSchema = joi.object({
-//   name: joi.string().required(),
-//   email: joi.string().required()
-// })
+const messageSchema = joi.object({
+  to: joi.string().required(),
+  text: joi.string().required(),
+  type: joi.any().valid('message','private_message')
+})
 
 const mongoClient = new MongoClient(process.env.MONGO_URI);
 let db;
@@ -28,7 +29,7 @@ mongoClient.connect().then(() => {
 });
 
 server.post('/participants', async (req, res) => {
-  const validation = participantSchema.validate(req.body, { abortEalry: true });
+  const validation = participantSchema.validate(req.body, { abortEarly: true });
 
   if(validation.error) {
     res.sendStatus(422);
@@ -78,13 +79,20 @@ server.get('/participants', async (req, res) => {
 });
 
 server.post('/messages', async (req, res) => {
+  const validation = messageSchema.validate(req.body, { abortEarly: false });
+  const isParticipant = await db.collection("participants").findOne({ name: req.headers.user });
   
+  if(validation.error || !isParticipant) {
+    res.sendStatus(422);
+    return
+  }
+
   const message = {
     from: req.headers.user,
     ...req.body,
     time: dayjs().format('HH:mm:ss')
   }
-
+  
   try {
     await db.collection("messages").insertOne(message);
 
