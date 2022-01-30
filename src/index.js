@@ -104,10 +104,13 @@ server.post('/messages', async (req, res) => {
 });
 
 server.get('/messages', async (req, res) => {
+  const limit = parseInt(req.query.limit);
+
   try {
     const message = await db.collection("messages").find().toArray();
+    let filterMessages = message.slice(0, limit)
 
-    res.send(message);
+    res.send(filterMessages);
   } catch (error) {
     console.log(error);
     res.sendStatus(500);
