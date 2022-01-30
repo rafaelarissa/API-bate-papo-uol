@@ -108,9 +108,16 @@ server.get('/messages', async (req, res) => {
 
   try {
     const message = await db.collection("messages").find().toArray();
-    let filterMessages = message.slice(0, limit)
+    
+    const filterUserMessage = message.filter(message => 
+      message.to === req.headers.user || message.from === req.headers.user || message.to === 'Todos'
+    )
+    
+    let filterMessages = filterUserMessage.slice(0, limit)
 
-    res.send(filterMessages);
+    res.send(
+      limit ? filterMessages : filterUserMessage
+    );
   } catch (error) {
     console.log(error);
     res.sendStatus(500);
