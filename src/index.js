@@ -103,4 +103,15 @@ server.post('/messages', async (req, res) => {
   }
 });
 
+server.get('/messages', async (req, res) => {
+  try {
+    const message = await db.collection("messages").find().toArray();
+
+    res.send(message);
+  } catch (error) {
+    console.log(error);
+    res.sendStatus(500);
+  }
+});
+
 server.listen(5000);
