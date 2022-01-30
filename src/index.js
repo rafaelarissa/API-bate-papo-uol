@@ -124,4 +124,16 @@ server.get('/messages', async (req, res) => {
   }
 });
 
+server.post('/status', async (req, res) => {
+  try {    
+    await db.collection("participants").updateOne({
+      name: req.headers.user
+    }, { $set: { lastStatus: Date.now() }})
+
+    res.sendStatus(200);
+  } catch (error) {
+    res.sendStatus(404);
+  }
+});
+
 server.listen(5000);
