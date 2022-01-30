@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from "dotenv";
 import joi from 'joi';
+import dayjs from 'dayjs';
+import 'dayjs/locale/pt-br.js';
 import { MongoClient } from 'mongodb';
 
 const server = express();
@@ -34,6 +36,7 @@ server.post('/participants', async (req, res) => {
   }
   
   const existingParticipant = await db.collection("participants").find(req.body).toArray();
+
   if(existingParticipant.length !== 0) {
     res.status(409).send('Nome já cadastrado');
     return
@@ -44,8 +47,19 @@ server.post('/participants', async (req, res) => {
     lastStatus: Date.now()
   }
 
+  const message = {
+    from: participant.name,
+    to: 'Todos',
+    text: 'entra na sala...',
+    type: 'status',
+    time: dayjs().format('HH:MM:ss')
+  }
+
+  console.log(message)
+
   try {
     await db.collection("participants").insertOne(participant);
+    await db.collection("messages").insertOne(message);
     
     res.sendStatus(201);
   } catch(error) {
