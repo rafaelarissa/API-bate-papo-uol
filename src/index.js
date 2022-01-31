@@ -53,7 +53,7 @@ server.post('/participants', async (req, res) => {
     to: 'Todos',
     text: 'entra na sala...',
     type: 'status',
-    time: dayjs().format('HH:MM:ss')
+    time: dayjs().format('HH:mm:ss')
   }
 
   try {
@@ -137,7 +137,20 @@ server.post('/status', async (req, res) => {
 });
 
 setInterval( async () => {
-  await db.collection("participants").deleteMany(  { lastStatus :{ $gt: 10000 } });
+ const listParticipants = await db.collection("participants").find().toArray();
+
+ for(let i in listParticipants) {
+   if(Date.now() - listParticipants[i].lastStatus > 10000) {
+     await db.collection("participants").deleteOne({ lastStatus: listParticipants[i].lastStatus });
+     await db.collection("messages").insertOne({
+      from: listParticipants[i].name,
+      to: 'Todos',
+      text: 'sai da sala...',
+      type: 'status',
+      time: dayjs().format('HH:mm:ss')
+     })
+   }
+ }
 }, 15000);
 
 server.listen(5000);
