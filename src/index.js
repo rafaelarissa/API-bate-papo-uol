@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import joi from 'joi';
 import dayjs from 'dayjs';
 import 'dayjs/locale/pt-br.js';
-import { MongoClient } from 'mongodb';
+import { MongoClient, ObjectId } from 'mongodb';
 import { stripHtml } from 'string-strip-html';
 
 const server = express();
@@ -45,7 +45,7 @@ server.post('/participants', async (req, res) => {
   }
 
   const participant = {
-    name: stripHtml(req.body.name).result,
+    name: stripHtml(req.body.name).result.trim(),
     lastStatus: Date.now()
   }
 
@@ -90,12 +90,14 @@ server.post('/messages', async (req, res) => {
 
   const message = {
     from: req.headers.user,
-    ...req.body,
+    to: stripHtml(req.body.to).result.trim(),
+    text: stripHtml(req.body.text).result.trim(),
+    type: stripHtml(req.body.type).result.trim(),
     time: dayjs().format('HH:mm:ss')
   }
   
   try {
-    await db.collection("messages").insertOne(stripHtml(message).result.trim());
+    await db.collection("messages").insertOne(message);
 
     res.sendStatus(201);  
   } catch (error) {
@@ -109,7 +111,7 @@ server.get('/messages', async (req, res) => {
 
   try {   
     const filterUserMessage = await db.collection("messages").find( { $or: [ { to: req.headers.user }, { from: req.headers.user }, { type: 'status' }, { type: 'message' } ] } ).toArray();
-      
+    
     let filterMessages = filterUserMessage.slice(0, limit)
 
     res.send(
@@ -157,5 +159,31 @@ setInterval( async () => {
    }
  }
 }, 15000);
+
+server.delete('/messages/:id', async (req, res) => {
+  const { id } = req.params;
+
+  const searchMessage = await db.collection("messages").find({ _id: new ObjectId(id) }).toArray();
+  
+  if(searchMessage === null) {
+    res.send('Id não encontrado').status(404);
+    return
+  }
+
+  const searchUser = await db.collection("participants").find({name: req.headers.user});
+  if(searchUser === null) {
+    res.sendStatus(401)
+    return
+  } 
+
+  try {
+    await db.collection("messages").deleteOne({ _id: new ObjectId(id) })
+    
+    res.send('Mensagem excluída').status(200);
+  } catch(error) {
+    console.log(error);
+    res.sendStatus(500);
+  }
+});
 
 server.listen(5000);
