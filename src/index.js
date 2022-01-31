@@ -136,4 +136,8 @@ server.post('/status', async (req, res) => {
   }
 });
 
+setInterval( async () => {
+  await db.collection("participants").deleteMany(  { lastStatus :{ $gt: 10000 } });
+}, 15000);
+
 server.listen(5000);
