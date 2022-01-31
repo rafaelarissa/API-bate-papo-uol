@@ -82,7 +82,7 @@ server.post('/messages', async (req, res) => {
   const validation = messageSchema.validate(req.body, { abortEarly: false });
   const isParticipant = await db.collection("participants").findOne({ name: req.headers.user });
   
-  if(validation.error || !isParticipant) {
+  if(validation.error || isParticipant === null) {
     res.sendStatus(422);
     return
   }
@@ -106,13 +106,9 @@ server.post('/messages', async (req, res) => {
 server.get('/messages', async (req, res) => {
   const limit = parseInt(req.query.limit);
 
-  try {
-    const message = await db.collection("messages").find().toArray();
-    
-    const filterUserMessage = message.filter(message => 
-      message.to === req.headers.user || message.from === req.headers.user || message.to === 'Todos'
-    )
-    
+  try {   
+    const filterUserMessage = await db.collection("messages").find( { $or: [ { to: req.headers.user }, { from: req.headers.user }, { type: 'status' }, { type: 'message' } ] } ).toArray();
+      
     let filterMessages = filterUserMessage.slice(0, limit)
 
     res.send(
@@ -125,6 +121,13 @@ server.get('/messages', async (req, res) => {
 });
 
 server.post('/status', async (req, res) => {
+  const isParticipant = await db.collection("participants").findOne({ name: req.headers.user });
+
+  if(isParticipant === null) {
+    res.sendStatus(404);
+    return
+  }
+
   try {    
     await db.collection("participants").updateOne({
       name: req.headers.user
@@ -132,7 +135,8 @@ server.post('/status', async (req, res) => {
 
     res.sendStatus(200);
   } catch (error) {
-    res.sendStatus(404);
+    console.log(error)
+    res.sendStatus(500);
   }
 });
 
