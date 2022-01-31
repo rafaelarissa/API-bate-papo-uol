@@ -5,6 +5,7 @@ import joi from 'joi';
 import dayjs from 'dayjs';
 import 'dayjs/locale/pt-br.js';
 import { MongoClient } from 'mongodb';
+import { stripHtml } from 'string-strip-html';
 
 const server = express();
 server.use(express.json());
@@ -44,7 +45,7 @@ server.post('/participants', async (req, res) => {
   }
 
   const participant = {
-    name: req.body.name,
+    name: stripHtml(req.body.name).result,
     lastStatus: Date.now()
   }
 
